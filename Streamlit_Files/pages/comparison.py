@@ -1,7 +1,7 @@
 import streamlit as st
 import sys 
 import os
-sys.path.append(os.path.abspath("C:\\Users\\Time\\Sports Analytics"))
+sys.path.append(os.path.abspath("C:\\Users\\samue\\GitHub\\sports_analytics"))
 from fit_data import *
 import plotly_express as px
 import plotly.graph_objects as go
@@ -12,37 +12,140 @@ from highlight_text import fig_text
 # import numpy as np
 
 
+# ----------------------------- Page Config --------------------------------- #
 st.set_page_config(layout="wide")
 
-st.title('Comparison')
+# -------------------------------- Title ------------------------------------ #
+st.title('Compare Sessions')
+st.subheader('Comparison')
 
 
-line_chart = alt.Chart(fit_df[(fit_df['timestamp_x'].dt.date == pd.to_datetime('2023-02-24').date())]).transform_fold(
-    ["heart_rate", "enhanced_speed", "enhanced_altitude"],
-    as_=["metric", "value"]
-).mark_line().encode(
-    x=alt.X('timestamp_x:T'),
-    y=alt.Y('value:Q', scale = alt.Scale(zero=False)),
-    color="metric:N"
-).properties(
-    width=800,
-    height=400,
-    title='Metriken im Verlauf'
+# ----------------------------- Custom Style -------------------------------- #
+st.markdown('''
+<style>
+
+canvas {
+  border-radius: 15px;
+}
+
+.stats {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  align-items: flex-start;
+  border-radius: 12px;
+  padding: 16px 16px;
+  gap: 3vh;
+  height: 100%;
+}
+
+.stats#first {
+  background-color: #1AB0B0;
+}
+
+.stats#second {
+  background-color: #8676FE;
+}
+
+.stats * {
+  color: #ffffff;
+  margin: 0;
+  padding: 0;
+}
+
+.stats .top .title {
+  font-size: 18px;
+  font-weight: 500;
+}
+
+.stats .top .subheading {
+  font-size: 16px;
+  opacity: .65;
+}
+
+.stats .bottom {
+  display: flex;
+  flex-direction: row;
+  flex-wrap: wrap;
+  justify-content: space-between;
+}
+
+.stats .data_elem {
+  width: 49%;
+  margin-bottom: 2vh;
+}
+
+.stats .label {
+  font-size: 14px;
+  opacity: .65;
+}
+
+.stats .text {
+  font-size: 28px;
+}
+</style>
+''', unsafe_allow_html=True)
+
+
+# --------------------------------- Selectors -------------------------------- #
+
+col_select_1, col_select_2, col_select_3, col_select_4 = st.columns([4, 4, 4, 8])
+
+selection_sport = col_select_1.selectbox("Which sport would you like to select?", options=fit_df["sport"].unique())
+fit_df = fit_df[fit_df["sport"] == selection_sport]
+selection_session_1 = col_select_2.selectbox("First Session", options=fit_df["file_id"].unique())
+selection_session_2 = col_select_3.selectbox("Second Session", options=fit_df["file_id"].unique())
+
+
+# ------------------------------------------- Session 1 ------------------------------------ #
+
+col_session_1_left, col_session_1_right = st.columns([3, 10])
+
+# --------------------------------------- Session 1 KPIs -------------------------------------- #
+
+session_1_name = 'Radfahren, 21.04.2023, 17:25-18:56'
+session_1_distance = '114,56 km'
+session_1_duration = '4:05:53 h'
+session_1_avg_speed = '28 km/h'
+session_1_elevation = '1.580 m'
+
+col_session_1_left.markdown(
+    f'''
+    <div class="stats" id="first">
+        <div class="top">
+            <p class="title">Summary</p>
+            <p class="subheading">{session_1_name}</p>
+        </div>
+        <div class="bottom">
+            <div class="data_elem">
+                <p class="label">Distanz</p>
+                <p class="text">{session_1_distance}</p>
+            </div>
+            <div class="data_elem">
+                <p class="label">Dauer</p>
+                <p class="text">{session_1_duration}</p>
+            </div>
+            <div class="data_elem">
+                <p class="label">Ø Geschwindigkeit</p>
+                <p class="text">{session_1_avg_speed}</p>
+            </div>
+            <div class="data_elem">
+                <p class="label">Anstieg Gesamt</p>
+                <p class="text">{session_1_elevation}</p>
+            </div>
+        </div>
+    </div>
+    ''', unsafe_allow_html=True
 )
 
-selection_sport = st.selectbox("Which sport would you like to select?", options=fit_df["sport"].unique())
-fit_df = fit_df[fit_df["sport"] == selection_sport]
-selection_session_1 = st.selectbox("Which Sessions would you like to compare?", options=fit_df["file_id"].unique())
-selection_session_2 = st.selectbox("vs.", options=fit_df["file_id"].unique())
-
+# ---------------------------------------- Chart Session 1 ---------------------------------- #
 session_1_df = fit_df.query(
     "sport == @selection_sport & file_id == @selection_session_1"
 )
 
 session_1_df = session_1_df.reset_index().melt('timestamp_x', value_vars= ["heart_rate", "enhanced_speed", "enhanced_altitude", "power"], var_name='metric', value_name='value')
 
-nearest = alt.selection_point(nearest=True, on='mouseover',
-                        fields=['timestamp_x'], empty=False)
+nearest = alt.selection_point(nearest=True, on='mouseover', fields=['timestamp_x'], empty=False)
 
 line = alt.Chart(session_1_df).mark_line(interpolate='basis').encode(
     x='timestamp_x:T',
@@ -74,10 +177,57 @@ rules = alt.Chart(session_1_df).mark_rule(color='gray').encode(
 line_chart_1 = alt.layer(
     line, selectors, points, rules, text
 ).properties(
-    width=1000, height=500
+    height=300
+).configure(
+    background='#FFFFFF',
+    padding={"left": 50, "top": 50, "right": 50, "bottom": 50}
 )
 
-st.write(line_chart_1)
+col_session_1_right.altair_chart(line_chart_1, use_container_width=True)
+
+
+# ------------------------------------------- Session 2 ------------------------------------ #
+
+col_session_2_left, col_session_2_right = st.columns([3, 10])
+
+# --------------------------------------- Session 2 KPIs -------------------------------------- #
+
+session_2_name = 'Radfahren, 21.04.2023, 17:25-18:56'
+session_2_distance = '114,56 km'
+session_2_duration = '4:05:53 h'
+session_2_avg_speed = '28 km/h'
+session_2_elevation = '1.580 m'
+
+col_session_2_left.markdown(
+    f'''
+    <div class="stats" id="second">
+        <div class="top">
+            <p class="title">Summary</p>
+            <p class="subheading">{session_2_name}</p>
+        </div>
+        <div class="bottom">
+            <div class="data_elem">
+                <p class="label">Distanz</p>
+                <p class="text">{session_2_distance}</p>
+            </div>
+            <div class="data_elem">
+                <p class="label">Dauer</p>
+                <p class="text">{session_2_duration}</p>
+            </div>
+            <div class="data_elem">
+                <p class="label">Ø Geschwindigkeit</p>
+                <p class="text">{session_2_avg_speed}</p>
+            </div>
+            <div class="data_elem">
+                <p class="label">Anstieg Gesamt</p>
+                <p class="text">{session_2_elevation}</p>
+            </div>
+        </div>
+    </div>
+    ''', unsafe_allow_html=True
+)
+
+# --------------------------------------- Session 2 Chart ------------------------------------- #
 
 session_2_df = fit_df.query(
     "sport == @selection_sport & file_id == @selection_session_2"
@@ -118,13 +268,17 @@ rules = alt.Chart(session_2_df).mark_rule(color='gray').encode(
 line_chart_2 = alt.layer(
     line, selectors, points, rules, text
 ).properties(
-    width=1000, height=500
+    height=300
+).configure(
+    background='#FFFFFF',
+    padding={"left": 50, "top": 50, "right": 50, "bottom": 50}
 )
 
-st.write(line_chart_2)
+col_session_2_right.altair_chart(line_chart_2, use_container_width=True)
 
 
-#KPIs
+
+# ----------------------------------------- KPIs --------------------------------------- #
 """
 total_distance=
 total_time=

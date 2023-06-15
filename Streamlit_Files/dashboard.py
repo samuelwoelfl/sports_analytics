@@ -51,10 +51,10 @@ data = load_data(10000)
 data_load_state.text("")
 
 # ---------------------------------- Main Layout --------------------------------- #
-col_main_left, col_main_right = st.columns([3, 1])
+# col_main_left, col_main_right = st.columns([3, 1])
 
 # -------------------------------- Main Column Left ------------------------------ #
-col_stats_1, col_stats_2, col_stats_3 = col_main_left.columns([1, 1, 1])
+col_stats_1, col_stats_2, col_stats_3 = st.columns([1, 1, 1])
 
 # ------------------------------- First section left ----------------------------- #
 # Widget 1
@@ -130,7 +130,7 @@ form_chart = alt.Chart(vega_data.stocks(), title="Form", height=200).transform_f
 col_stats_3.altair_chart(form_chart, use_container_width=True)
 
 # -------------------------------------- Second Section left ------------------------------------- #
-col_activity, col_parts = col_main_left.columns([2, 1])
+col_activity, col_parts = st.columns([2, 1])
 
 # Widget Activity
 activity_data = pd.DataFrame({
@@ -172,8 +172,7 @@ parts_chart = alt.Chart(parts_data, title="Aufteilung", height=300).mark_arc(inn
 col_parts.altair_chart(parts_chart, use_container_width=True)
 
 # -------------------------------------- Third section left ---------------------------------- #
-
-col_main_left.subheader("Sessions")
+st.subheader("Sessions")
 
 sessions_data = pd.DataFrame(
     {
@@ -206,8 +205,8 @@ st.dataframe(sessions_data,
 # ----------------------------------------- Sidebar right ------------------------------------ #
 
 # Add content to the second column
-col_main_right.header("Your Goals")
-col_main_right.write("Running")
+# col_main_right.header("Your Goals")
+# col_main_right.write("Running")
 
 # ------------------------------------------ Old stuff --------------------------------------- #
 
